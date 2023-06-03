@@ -8,7 +8,7 @@ import threading
 DEBUG = True
 MODES = ['SIMPLE', 'THREADING', 'THREADPOOL']
 MODE = 1
-DOCUMENT_ROOT = './templates/'
+DOCUMENT_ROOT = './test/http-test-suite/httptest/'
 POOL = {}
 
 def run_server(port=8080, workers=1):
@@ -21,25 +21,17 @@ def run_server(port=8080, workers=1):
     while True:
         # принимаем клиента
         client_sock = accept_client_conn(serv_sock, cid)
-        
         # обслуживаем клиента
-        if 'SIMPLE' == MODES[MODE]:
-            serve_client(client_sock, cid)
-        elif 'THREADING' == MODES[MODE]:
-            while True:
-                
-                if len(POOL) < workers:
+        while True:
+            if len(POOL) < workers:
                 # основной поток - занимается приемом входящих подключений
                 # когда создается клиентский сокет, запускается дополнительный поток
-                    t = threading.Thread(name = str(cid), target=serve_client, args=(client_sock,cid))
-                    POOL[cid] = t
-                    t.start()
-                    break
-                else:
-                    print('waiting CLIENT:', cid, ', workers busy:', len(POOL),'/', workers)
-        #elif 'THREADPOOL' == MODES[MODE]:
-            #pool = multiprocessing.pool.ThreadPool(processes=workers)
-
+                t = threading.Thread(name = str(cid), target=serve_client, args=(client_sock,cid))
+                POOL[cid] = t
+                t.start()
+                break
+            else:
+                print('waiting free worker for CLIENT:', cid, ', workers busy:', len(POOL),'/', workers)   
         cid += 1
 
 
@@ -128,10 +120,7 @@ def handle_request(request):
     '''удерживаем запрос'''
     if DEBUG:
         print('handle_request')
-    #time.sleep(5)
-    #return request[::-1]
     error = check_errors(request)
-    time.sleep(15)
     responce = 'HTTP/1.1 200 OK\r\nServer: Microsoft-IIS/6.0\r\nContent-Type: text/html\r\n\r\n'
     if 'HEAD' in request.decode():
         if error:
