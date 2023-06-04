@@ -2,14 +2,17 @@ import socket
 import sys
 import time
 import threading
-#import multiprocessing
+import re
+import os
+from request_handler import RequestParse
+from config import *
 
 
-DEBUG = True
-MODES = ['SIMPLE', 'THREADING', 'THREADPOOL']
-MODE = 1
-DOCUMENT_ROOT = './test/http-test-suite/httptest/'
-POOL = {}
+
+
+
+
+
 
 def run_server(port=8080, workers=1):
     '''запуск сервера'''
@@ -99,46 +102,58 @@ def read_request(client_sock, delimiter=b'\r\n\r\n'):
         raise
 
 
-def check_403(request):
-    '''проверка пути'''
-    pass
 
 
-def check_404(request):
-    '''проверка страницы'''
-    pass
+
+def get_requested_path(request):
+    req = request.decode()
+    path = re.findall(r'^(?:GET|HEAD)\s+.+\sHTTP', req)
+    if DEBUG:
+        print('\nDEBUG', path[0].split(' ')[1])
+        
+    return path[0].split(' ')[1]
 
 
-def check_errors(request):
-    if check_403: 
-        return 'HTTP/1.1 403 Forbidden\r\nServer: Microsoft-IIS/6.0\r\nContent-Type: text/html\r\n\r\n'
-    if check_404:
-        return 'HTTP/1.1 404 Page Not Found\r\nServer: Microsoft-IIS/6.0\r\nContent-Type: text/html\r\n\r\n'
+def is_file_request(path):
+    filename = path.split('/')[-1]
+    if '.' in filename:
+        return filename
+
+
 
 
 def handle_request(request):
     '''удерживаем запрос'''
     if DEBUG:
         print('handle_request')
-    error = check_errors(request)
+    
+    req = RequestParse(request)
+    return req.get_response()
+
+
+def handle_request_old(request):
+    '''удерживаем запрос'''
+    if DEBUG:
+        print('handle_request')
+
     responce = 'HTTP/1.1 200 OK\r\nServer: Microsoft-IIS/6.0\r\nContent-Type: text/html\r\n\r\n'
     if 'HEAD' in request.decode():
-        if error:
-            return error
+        # if error:
+        #     return error
         return responce
     elif 'GET' in request.decode():
-        if error:
-            return error
+        # if error:
+        #     return error
         return responce + '<html><pre>{0}</pre></html>'
     else:
         return 'HTTP/1.1 405 Method Not Allowed\r\nServer: Microsoft-IIS/6.0\r\nContent-Type: text/html\r\n\r\n'
-
 
 
 def write_response(client_sock, response, cid):
     '''выдаем ответ'''
     if DEBUG:
         print('write_response')
+        print(repr(response))
     client_sock.sendall(response.encode())
     client_sock.close()
     POOL.pop(cid)
