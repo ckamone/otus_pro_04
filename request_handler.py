@@ -82,6 +82,8 @@ class RequestParse():
         self.meth_is_allowed = self.is_allowed_meth()
         self.status = None
         self.filename = None
+        self.req_is_file = None
+        self.file_is_exist = None
 
         if self.meth_is_allowed:
 
@@ -90,14 +92,14 @@ class RequestParse():
             self.path_is_allowed = self.is_allowed_path()
             if not self.path_is_allowed:
                 self.status = 403
-
-            # мы здесь, если метод и путь разрешены. далее проверки по файлу. если не файл то ищем индекс, если файл то ищем файл
-            self.req_is_file = self.is_file_req()
-            self.file_is_exist = self.is_exist_file()
-            if not self.file_is_exist:
-                self.status = 404
             else:
-                self.status = 200
+                # мы здесь, если метод и путь разрешены. далее проверки по файлу. если не файл то ищем индекс, если файл то ищем файл
+                self.req_is_file = self.is_file_req()
+                self.file_is_exist = self.is_exist_file()
+                if not self.file_is_exist:
+                    self.status = 404
+                else:
+                    self.status = 200
         else:
             self.status = 405
         
@@ -130,19 +132,25 @@ class RequestParse():
     def is_exist_file(self):
         path = DOCUMENT_ROOT+self.method_path
         if not self.req_is_file:
-            for (dirpath, dirnames, filenames) in os.walk(path):
-                if 'index.html' in filenames:
-                    return True
+            if 'index.html' in os.listdir(path):
+                return True
+
+            # for (dirpath, dirnames, filenames) in os.walk(path):
+            #     print('----', filenames)
+            #     if 'index.html' in filenames:
+            #         return True
         else:
-            for (dirpath, dirnames, filenames) in os.walk(path):
-                if self.filename in filenames:
-                    return True
+            # for (dirpath, dirnames, filenames) in os.walk(path):
+            #     if self.filename in filenames:
+            #         return True
+            if self.filename in os.listdir(path):
+                return True
 
 
 def main():    
-    request = b'GET /httptest/dir2/ HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
+    request = b'GET /httptest/dir2/page.html HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
     req = RequestParse(request=request)
-    print('TESTING')
+    print('DEBUG')
     # test method parse
     print('method:',req.method)
     # test method allowed check
@@ -155,7 +163,7 @@ def main():
     # check is path allowed?
     print('path allowed:', req.path_is_allowed)
 
-    # is file rreq?
+    # is fileget_response() rreq?
     print('path with filename:', req.req_is_file)
 
     # 404 check

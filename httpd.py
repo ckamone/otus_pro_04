@@ -128,7 +128,7 @@ def handle_request(request):
         print('handle_request')
     
     req = RequestParse(request)
-    return req.get_response()
+    return req.create_response()
 
 
 def handle_request_old(request):
