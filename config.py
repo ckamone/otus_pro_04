@@ -1,6 +1,4 @@
-DEBUG = True
-MODES = ['SIMPLE', 'THREADING', 'THREADPOOL']
-MODE = 1
+DEBUG = False
 DOCUMENT_ROOT = '/home/tester/code/otus/professional/hw04/test/http-test-suite'
 
 POOL = {}
