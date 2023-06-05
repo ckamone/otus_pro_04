@@ -46,6 +46,7 @@ class Responser():
                     filetype = "application/x-shockwave-flash"
                 else:
                     filetype = 'image/'+self.filename.split('.')[-1]
+                    filetype = filetype.replace('jpg','jpeg')
         
         self.header_ctype = f'Content-Type: {filetype}\r\n'
     
@@ -53,7 +54,7 @@ class Responser():
         fullpath = self.path + self.filename
         with open(fullpath, 'rb+') as f:
             content = f.read()
-        self.header_clen = f'Content-Length: {str(len(content.decode()))}\r\n'
+        self.header_clen = f'Content-Length: {str(len(content))}\r\n'
 
     def make_header_date(self):
         date = datetime.now()
@@ -76,7 +77,11 @@ class Responser():
                 fullpath = self.path + self.filename
                 with open(fullpath, 'rb+') as f:
                     html = f.read()
-                    return self.headers + html.decode() + self.clrf
+                    if type(html) is bytes:
+                        rsp = bytes(self.headers, 'UTF-8') + html + bytes(self.clrf, 'UTF-8')
+                    else: 
+                        rsp = self.headers + html.decode() + self.clrf
+                    return rsp
         else:
             return self.headers
 
@@ -180,7 +185,7 @@ class RequestParse():
 
 
 def main():    
-    request = b'GET /httptest/wikipedia_russia.html HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
+    request = b'GET //httptest/160313.jpg HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
     req = RequestParse(request=request)
     print('DEBUG')
     # test method parse

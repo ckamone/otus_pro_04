@@ -154,7 +154,10 @@ def write_response(client_sock, response, cid):
     if DEBUG:
         print('write_response')
         print(repr(response))
-    client_sock.sendall(response.encode())
+    if type(response) is bytes:
+        client_sock.sendall(response)
+    else:
+        client_sock.sendall(response.encode())
     client_sock.close()
     POOL.pop(cid)
     print(f'Client #{cid} has been served')
