@@ -2,6 +2,7 @@ from config import *
 import re
 import os
 from datetime import datetime
+import urllib.parse
 
 
 class Responser():
@@ -31,13 +32,20 @@ class Responser():
         
     def make_header_ctype(self):
         filetype = None
-        texttypes = ['html', 'css', 'js']
+        texttypes = ['html', 'css']
+        apptypes = ['js']
+        
         for tp in texttypes:
             if tp in self.filename:
                 filetype = 'text/'+tp
                 break
             else:
-                filetype = 'image/'+self.filename.split('.')[-1]
+                if '.js' in self.filename:
+                    filetype = "application/x-javascript"
+                elif '.swf' in self.filename:
+                    filetype = "application/x-shockwave-flash"
+                else:
+                    filetype = 'image/'+self.filename.split('.')[-1]
         
         self.header_ctype = f'Content-Type: {filetype}\r\n'
     
@@ -81,9 +89,12 @@ class RequestParse():
         # проверка что метод разрешен
         self.meth_is_allowed = self.is_allowed_meth()
         self.status = None
+        self.path = None
         self.filename = None
         self.req_is_file = None
         self.file_is_exist = None
+        self.query_string = None
+        self.method_path = ''
 
         if self.meth_is_allowed:
 
@@ -92,14 +103,14 @@ class RequestParse():
             self.path_is_allowed = self.is_allowed_path()
             if not self.path_is_allowed:
                 self.status = 403
+            
+            # мы здесь, если метод и путь разрешены. далее проверки по файлу. если не файл то ищем индекс, если файл то ищем файл
+            self.req_is_file = self.is_file_req()
+            self.file_is_exist = self.is_exist_file()
+            if not self.file_is_exist:
+                self.status = 404
             else:
-                # мы здесь, если метод и путь разрешены. далее проверки по файлу. если не файл то ищем индекс, если файл то ищем файл
-                self.req_is_file = self.is_file_req()
-                self.file_is_exist = self.is_exist_file()
-                if not self.file_is_exist:
-                    self.status = 404
-                else:
-                    self.status = 200
+                self.status = 200
         else:
             self.status = 405
         
@@ -115,40 +126,61 @@ class RequestParse():
 
     def get_path(self):
         path = re.findall(r'^(?:GET|HEAD)\s+.+\sHTTP', self.request)
+        print('debg',path[0].split(' ')[1])
         return path[0].split(' ')[1]
 
     def is_allowed_path(self):
         return True if self.method_path in ALLOWED_PATH else False
+    
+    def check_query_string(self):
+        if '?' in self.filename:
+            self.query_string = self.filename.rsplit('?')[1]
+            self.filename = self.filename.rsplit('?')[0]
+            self.method_path = self.method_path.rsplit('?')[0]
+
+    def check_spaces(self):
+        if '%20' in self.filename:
+            self.filename = self.filename.replace('%20', ' ')
+            self.method_path = self.method_path.replace('%20', ' ')
+
+    def decode_url(self):
+        self.method_path = urllib.parse.unquote(self.method_path)
 
     def is_file_req(self):
+        self.decode_url()
         if '.' in self.method_path:
-            temp = self.method_path.split('.')[-1]
+            temp = self.method_path.split('.')[-1].rsplit('?')[0]
             if temp in ALLOWED_TYPES:
                 self.filename = self.method_path.split('/')[-1]
+                self.check_query_string()
                 self.method_path = self.method_path.rstrip(self.filename)
+                self.check_spaces()
                 self.path_is_allowed = self.is_allowed_path()
                 return True
 
     def is_exist_file(self):
         path = DOCUMENT_ROOT+self.method_path
-        if not self.req_is_file:
-            if 'index.html' in os.listdir(path):
-                return True
+        try:
+            if not self.req_is_file:
+                if 'index.html' in os.listdir(path):
+                    return True
 
             # for (dirpath, dirnames, filenames) in os.walk(path):
             #     print('----', filenames)
             #     if 'index.html' in filenames:
             #         return True
-        else:
+            else:
             # for (dirpath, dirnames, filenames) in os.walk(path):
             #     if self.filename in filenames:
             #         return True
-            if self.filename in os.listdir(path):
-                return True
+                if self.filename in os.listdir(path):
+                    return True
+        except NotADirectoryError:
+            return False
 
 
 def main():    
-    request = b'GET /httptest/dir2/page.html HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
+    request = b'GET /httptest/wikipedia_russia.html HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: curl/7.81.0\r\nAccept: */*\r\n\r\n'
     req = RequestParse(request=request)
     print('DEBUG')
     # test method parse
@@ -158,13 +190,13 @@ def main():
     
 
     # getting path
-    print('path:',req.method_path)
+    print('req path:',req.method_path)
 
     # check is path allowed?
-    print('path allowed:', req.path_is_allowed)
+    print('req path allowed:', req.path_is_allowed)
 
     # is fileget_response() rreq?
-    print('path with filename:', req.req_is_file)
+    print('req with filename:', req.req_is_file)
 
     # 404 check
     print('file exists:', req.file_is_exist)

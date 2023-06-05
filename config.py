@@ -7,4 +7,4 @@ POOL = {}
 
 ALLOWED_METHOD = ['GET', 'HEAD']
 ALLOWED_PATH = ['/httptest/', '/httptest/dir1/', '/httptest/dir2/']
-ALLOWED_TYPES = ['html', 'css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'swf']
+ALLOWED_TYPES = ['html', 'css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'swf', 'txt']
