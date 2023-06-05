@@ -1,18 +1,10 @@
 import socket
 import sys
-import time
 import threading
 import re
-import os
 from request_handler import RequestParse
 from config import *
-
-
-
-
-
-
-
+import argparse
 
 def run_server(port=8080, workers=1):
     '''запуск сервера'''
@@ -164,4 +156,17 @@ def write_response(client_sock, response, cid):
 
 
 if __name__ == '__main__':
-    run_server(port=int(sys.argv[1]),workers=int(sys.argv[2]))
+    parser_var = argparse.ArgumentParser()
+
+    parser_var.add_argument('-r',
+                        default=DOCUMENT_ROOT,
+                        help="set document root")
+    parser_var.add_argument('-p',
+                        default=8080,
+                        help="set port")
+    parser_var.add_argument('-w',
+                        default=20,
+                        help="set workers")
+    args = parser_var.parse_args()
+    DOCUMENT_ROOT = args.r
+    run_server(port=int(args.p),workers=int(args.w))
