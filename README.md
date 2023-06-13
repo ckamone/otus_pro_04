@@ -23,6 +23,8 @@ http://localhost/httptest/wikipedia_russia.html
 ab -n 50000 -c 100 -r http://localhost:8080/ 
 
 ## load test result @20 workers
+commandline
+{
 This is ApacheBench, Version 2.3 <$Revision: 1879490 $>
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
 Licensed to The Apache Software Foundation, http://www.apache.org/
@@ -77,3 +79,4 @@ Percentage of the requests served within a certain time (ms)
   98%     71
   99%     84
  100%    118 (longest request)
+}
